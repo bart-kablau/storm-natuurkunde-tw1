@@ -1,0 +1,191 @@
+{
+ "build": "84c48d60ec",
+ "appBytes": 1415058,
+ "app": [
+  "assets/font/fredoka-500.woff2",
+  "assets/font/fredoka-600.woff2",
+  "assets/font/fredoka-700.woff2",
+  "assets/font/nunito-400.woff2",
+  "assets/font/nunito-600.woff2",
+  "assets/font/nunito-700.woff2",
+  "assets/font/nunito-800.woff2",
+  "assets/icon-192.png",
+  "assets/icon-512.png",
+  "content.js",
+  "ezels.js",
+  "index.html",
+  "manifest.webmanifest",
+  "math.js",
+  "offline.js",
+  "speelles/assets/font/fredoka-500.woff2",
+  "speelles/assets/font/fredoka-600.woff2",
+  "speelles/assets/font/fredoka-700.woff2",
+  "speelles/assets/font/nunito-400.woff2",
+  "speelles/assets/font/nunito-600.woff2",
+  "speelles/assets/font/nunito-700.woff2",
+  "speelles/assets/font/nunito-800.woff2",
+  "speelles/biologie/teken.js",
+  "speelles/biologie/vis.css",
+  "speelles/biologie/vis.js",
+  "speelles/engine.css",
+  "speelles/engine.js",
+  "speelles/index.html",
+  "speelles/lessen.js",
+  "speelles/natuurkunde/teken.js",
+  "speelles/natuurkunde/vis.css",
+  "speelles/natuurkunde/vis.js",
+  "video/manifest.js"
+ ],
+ "media": [
+  {
+   "pad": "video/dichtheid-n1.mp4",
+   "hash": "dd8cc5ab4974",
+   "bytes": 1098760
+  },
+  {
+   "pad": "video/dichtheid-n2.mp4",
+   "hash": "b145b2b26397",
+   "bytes": 1070175
+  },
+  {
+   "pad": "video/dichtheid-n3.mp4",
+   "hash": "f6c5ae9dae3a",
+   "bytes": 1099972
+  },
+  {
+   "pad": "video/drijven-n1.mp4",
+   "hash": "2a67346a606d",
+   "bytes": 950548
+  },
+  {
+   "pad": "video/drijven-n2.mp4",
+   "hash": "cfaaa0e33c6d",
+   "bytes": 933990
+  },
+  {
+   "pad": "video/drijven-n3.mp4",
+   "hash": "2329290e3c73",
+   "bytes": 939152
+  },
+  {
+   "pad": "video/geleiders.mp4",
+   "hash": "e4a38aedace5",
+   "bytes": 7387942
+  },
+  {
+   "pad": "video/grootheid-n1.mp4",
+   "hash": "6cd15c5c374d",
+   "bytes": 988528
+  },
+  {
+   "pad": "video/grootheid-n2.mp4",
+   "hash": "3d6330f80fc2",
+   "bytes": 945049
+  },
+  {
+   "pad": "video/grootheid-n3.mp4",
+   "hash": "395a418ef553",
+   "bytes": 906613
+  },
+  {
+   "pad": "video/massa-gewicht.mp4",
+   "hash": "3ec7a8f38dfb",
+   "bytes": 6010587
+  },
+  {
+   "pad": "video/methode-n1.mp4",
+   "hash": "060ff04d98a2",
+   "bytes": 983013
+  },
+  {
+   "pad": "video/methode-n2.mp4",
+   "hash": "5cc527744569",
+   "bytes": 906140
+  },
+  {
+   "pad": "video/methode-n3.mp4",
+   "hash": "1e4462707bcc",
+   "bytes": 918156
+  },
+  {
+   "pad": "video/methode.mp4",
+   "hash": "e23f2cec66d6",
+   "bytes": 10655390
+  },
+  {
+   "pad": "video/omrekenen-n1.mp4",
+   "hash": "743cd0b241c4",
+   "bytes": 1062300
+  },
+  {
+   "pad": "video/omrekenen-n2.mp4",
+   "hash": "581a1852e787",
+   "bytes": 866037
+  },
+  {
+   "pad": "video/omrekenen-n3.mp4",
+   "hash": "86d07db38092",
+   "bytes": 1128812
+  },
+  {
+   "pad": "video/spanning.mp4",
+   "hash": "e3a4fd3966b3",
+   "bytes": 9175088
+  },
+  {
+   "pad": "video/spanning.ruw.mp4",
+   "hash": "2752e63e946d",
+   "bytes": 36695168
+  },
+  {
+   "pad": "video/stroomkring.mp4",
+   "hash": "a5fb40b39a5a",
+   "bytes": 7777512
+  },
+  {
+   "pad": "video/stroomsterkte.mp4",
+   "hash": "5568218b41d3",
+   "bytes": 9781352
+  },
+  {
+   "pad": "video/vakken-n1.mp4",
+   "hash": "34154f9c4be5",
+   "bytes": 846629
+  },
+  {
+   "pad": "video/vakken-n2.mp4",
+   "hash": "c9e18f7f25c4",
+   "bytes": 802259
+  },
+  {
+   "pad": "video/vakken-n3.mp4",
+   "hash": "e7a159b12dab",
+   "bytes": 984043
+  },
+  {
+   "pad": "video/vakken.mp4",
+   "hash": "be4acda71341",
+   "bytes": 8879523
+  },
+  {
+   "pad": "video/volume-n1.mp4",
+   "hash": "1080092621f9",
+   "bytes": 908765
+  },
+  {
+   "pad": "video/volume-n2.mp4",
+   "hash": "0446d101eeeb",
+   "bytes": 928811
+  },
+  {
+   "pad": "video/volume-n3.mp4",
+   "hash": "653526820842",
+   "bytes": 890204
+  },
+  {
+   "pad": "video/volume.mp4",
+   "hash": "f51972bc2a1d",
+   "bytes": 8742025
+  }
+ ]
+}
