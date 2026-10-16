@@ -1,6 +1,6 @@
 {
- "build": "f6036bf7b6",
- "appBytes": 1415081,
+ "build": "22e95453e5",
+ "appBytes": 1418001,
  "app": [
   "assets/font/fredoka-500.woff2",
   "assets/font/fredoka-600.woff2",
@@ -73,9 +73,14 @@
    "bytes": 939152
   },
   {
+   "pad": "video/drijven.mp4",
+   "hash": "a46866a46b7a",
+   "bytes": 6713476
+  },
+  {
    "pad": "video/geleiders.mp4",
-   "hash": "e4a38aedace5",
-   "bytes": 7387942
+   "hash": "546e58fa8438",
+   "bytes": 7652453
   },
   {
    "pad": "video/grootheid-n1.mp4",
@@ -133,9 +138,19 @@
    "bytes": 1128812
   },
   {
+   "pad": "video/schakelingen.mp4",
+   "hash": "28637fae468d",
+   "bytes": 9405294
+  },
+  {
    "pad": "video/spanning.mp4",
    "hash": "91fbb9ac521d",
    "bytes": 10207381
+  },
+  {
+   "pad": "video/stroom-redeneren.mp4",
+   "hash": "1f69235c1749",
+   "bytes": 9826335
   },
   {
    "pad": "video/stroomkring.mp4",

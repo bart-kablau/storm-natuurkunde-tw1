@@ -448,7 +448,7 @@ sup{font-size:.72em;line-height:0}
    build klaar, dan herladen we één keer onder ?v=<build> — een URL die niet in de cache
    zit. Offline of bij een fout: niets doen, de app werkt gewoon door. ------------------ */
 (function(){
-  var BUILD = "8f287b3ce0";          // wordt bij deploy vervangen door de echte build-hash
+  var BUILD = "b873afb4e4";          // wordt bij deploy vervangen door de echte build-hash
   if(BUILD === "dev") return; // lokaal/ongestempeld: niet checken
   try{
     var hier = new URL(location.href);
@@ -794,12 +794,12 @@ sup{font-size:.72em;line-height:0}
 </div>
 <div id="confetti"></div>
 
-<script src="content.js?v=8f287b3ce0"></script>
-<script src="ezels.js?v=8f287b3ce0"></script>
-<script src="video/manifest.js?v=8f287b3ce0"></script>
-<script src="offline.js?v=8f287b3ce0"></script>
+<script src="content.js?v=b873afb4e4"></script>
+<script src="ezels.js?v=b873afb4e4"></script>
+<script src="video/manifest.js?v=b873afb4e4"></script>
+<script src="offline.js?v=b873afb4e4"></script>
 <!-- math.js alleen voor wiskunde-vakken (synchroon, geen 404 bij talen) -->
-<script>if(window.VAK&&window.VAK.wiskunde)document.write('<scr'+'ipt src="math.js?v=8f287b3ce0"><\/scr'+'ipt>');</script>
+<script>if(window.VAK&&window.VAK.wiskunde)document.write('<scr'+'ipt src="math.js?v=b873afb4e4"><\/scr'+'ipt>');</script>
 <script>
 /* =====================================================================
    App-engine — adaptief leermodel

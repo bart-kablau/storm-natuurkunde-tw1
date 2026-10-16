@@ -68,9 +68,10 @@
   /* ---------- stroomkring-weergave met bewegende lading-bolletjes ---------- */
   function kringView(def, opts = {}) {
     defs();
-    const svg = sv('svg', { viewBox: def.vb || '0 0 320 200', class: 'svgvis nk-kring-svg', role: 'img', 'aria-label': opts.alt || 'Stroomkring' });
+    const svg = sv('svg', { viewBox: NK.kring.vak(def).join(' '), class: 'svgvis nk-kring-svg', role: 'img', 'aria-label': opts.alt || 'Stroomkring' });
     const V = { def, opl: null, schema: !!opts.schema, segs: [], dots: [], raf: 0, laatste: 0, svg, el: h('div', { class: 'nk-kring' }, svg) };
     V.teken = () => {
+      svg.setAttribute('viewBox', NK.kring.vak(V.def).join(' '));
       V.opl = NK.kring.los(V.def);
       const { s, segs } = NK.kring.markup(V.def, V.opl, { ...opts, schema: V.schema });
       svg.innerHTML = s;
@@ -78,7 +79,7 @@
       const hulp = sv('g', { opacity: 0, 'pointer-events': 'none' }); svg.append(hulp);
       V.segs = segs.map(sg => { const p = sv('path', { d: sg.d }); hulp.append(p); let L = 0; try { L = p.getTotalLength(); } catch (e) {} const I = Math.abs(sg.I) < 1e-4 ? 0 : Math.sign(sg.I) * Math.min(Math.abs(sg.I), 3); return { p, I, L }; });
       V.dots = [];
-      V.segs.forEach(sg => { if (sg.L < 4) return; const n = Math.max(1, Math.round(sg.L / 14)); for (let k = 0; k < n; k++) { const c = sv('circle', { r: V.schema ? 2.3 : 2.9, class: 'nk-dot' }); laag.append(c); V.dots.push({ c, sg, u: (k + .5) / n }); } });
+      V.segs.forEach(sg => { if (sg.L < 4) return; const n = Math.max(1, Math.round(sg.L / 17)); for (let k = 0; k < n; k++) { const c = sv('circle', { r: V.schema ? 3 : 3.8, class: 'nk-dot' }); laag.append(c); V.dots.push({ c, sg, u: (k + .5) / n }); } });
       plaats(0);
       opts.naTeken && opts.naTeken(V);
     };
@@ -193,10 +194,10 @@
      p.materialen [{id, naam, teken (NK.kring.MATERIAAL), geleider, R?, w, mis}]
      p.kring (optioneel, met een onderdeel soort 'gat'), p.vraag, p.verklaar
      ========================================================================= */
-  const GAT_KRING = { vb: '0 0 320 200', onderdelen: [
-    { id: 'B', soort: 'batterij', x: 90, y: 160, cellen: 2 }, { id: 'L', soort: 'lamp', x: 160, y: 56, label: 'lampje' },
-    { id: 'G', soort: 'gat', x: 236, y: 160, label: 'het gat' }],
-    draden: [['B.p', 'G.a'], ['G.b', 'L.b', { via: [[292, 160], [292, 56]] }], ['L.a', 'B.n', { via: [[28, 56], [28, 160]] }]] };
+  const GAT_KRING = { onderdelen: [
+    { id: 'B', soort: 'batterij', x: 96, y: 196, cellen: 2 }, { id: 'L', soort: 'lamp', x: 136, y: 80, label: 'lampje' },
+    { id: 'G', soort: 'gat', x: 226, y: 140, rot: 90 }],
+    draden: [['B.p', 'G.b', { via: [[226, 196]] }], ['G.a', 'L.b', { via: [[226, 80]] }], ['L.a', 'B.n', { via: [[28, 80], [28, 196]] }]] };
   VIS.gattest = (pod, p, api) => {
     const def = kloon(p.kring || GAT_KRING), G = def.onderdelen.find(c => c.soort === 'gat'), L = def.onderdelen.find(c => c.soort === 'lamp');
     const V = kringView(def, {});
@@ -275,36 +276,31 @@
     defs();
     const cel = p.doel?.cel ?? p.cel ?? 1.5, R = p.R ?? 6, max = p.max ?? 8;
     let n = p.start ?? 1, open = p.open ?? false, gezienN = new Set([n]), gezienV = new Set([open]), klaarGemeld = false, vast = !p.inzet, iz = null, raf = 0, fase = 0, laatste = 0;
-    const wrap = h('div', { class: 'nk-pomp' }), svg = sv('svg', { viewBox: '0 0 320 230', class: 'svgvis', role: 'img', 'aria-label': 'Ballon en pomp' });
+    const wrap = h('div', { class: 'nk-pomp' }), svg = sv('svg', { viewBox: '0 0 320 250', class: 'svgvis', role: 'img', 'aria-label': 'Ballon en pomp' });
     const f = fbEl(), vis = h('div', { class: 'vis' }), lees = h('div', { class: 'nk-uitlees' });
-    const PAD = 'M84 64 H150 C176 64 186 64 206 64 H256 C276 64 282 76 282 96 V178 C282 198 270 206 250 206 H96 C84 206 70 206 70 196';
+    const PAD = 'M120 70 H220 H254 C278 70 288 84 288 104 V200 C288 224 274 232 252 232 H118 C104 232 98 232 98 222';
     function teken() {
-      const U = n * cel, I = open ? U / R : 0, rb = Math.min(56, 16 + U * 3.2);
+      const U = n * cel, I = open ? U / R : 0, rb = Math.min(30, 12 + U * 2.4);
       wrap.dataset.n = n;
-      const hoog = 26 * n, top = 200 - hoog;
-      let s = `<rect width="320" height="230" rx="16" fill="url(#nk-hout)"/><ellipse cx="110" cy="40" rx="140" ry="40" fill="#fff" opacity=".12"/>`;
-      s += `<path d="${PAD}" stroke="#7FA6C2" stroke-width="14" fill="none" stroke-linecap="round" opacity=".55"/><path d="${PAD}" stroke="#DDF1FF" stroke-width="9" fill="none" stroke-linecap="round" opacity=".9"/><path d="${PAD}" stroke="#fff" stroke-width="2" fill="none" opacity=".8" transform="translate(-1 -2)"/>`;
+      const ch = Math.min(30, 170 / n), bodem = 222, top = bodem - ch * n, perCel = ch >= 22;
+      let s = `<rect width="320" height="250" rx="16" fill="url(#nk-hout)"/><ellipse cx="110" cy="40" rx="140" ry="40" fill="#fff" opacity=".12"/>`;
+      s += `<path d="${PAD}" stroke="#7FA6C2" stroke-width="18" fill="none" stroke-linecap="round" opacity=".55"/><path d="${PAD}" stroke="#DDF1FF" stroke-width="12" fill="none" stroke-linecap="round" opacity=".9"/><path d="${PAD}" stroke="#fff" stroke-width="2.4" fill="none" opacity=".8" transform="translate(-1 -2)"/>`;
       s += `<g class="nk-pompdots"></g>`;
-      /* batterijen (pomp) */
-      for (let i = 0; i < n; i++) { const y = 200 - (i + 1) * 26; s += `<g filter="url(#nk-schaduw)"><rect x="52" y="${y + 2}" width="36" height="22" rx="4" fill="url(#nk-batt)"/><rect x="52" y="${y + 2}" width="36" height="7" rx="3" fill="url(#nk-batt-kop)"/><rect x="64" y="${y - 1}" width="12" height="4" rx="1.5" fill="url(#nk-alu)"/><text x="70" y="${y + 20}" font-size="7.5" text-anchor="middle" fill="#fff" font-weight="700">${g2(cel, 1)} V</text></g>`; }
-      s += `<path d="M70 ${top} V64 H84" stroke="#D93A3A" stroke-width="4" fill="none" stroke-linecap="round"/>`;
-      /* spanningsmeter over de stapel */
-      s += `<path d="M48 ${top + 4} H30 V100 M48 196 H30 V140" stroke="#D93A3A" stroke-width="2" fill="none"/><path d="M30 140 V196 H48" stroke="#2E3440" stroke-width="2" fill="none"/>` +
-        `<g filter="url(#nk-schaduw)"><rect x="8" y="100" width="44" height="40" rx="6" fill="url(#nk-meter)"/><rect x="13" y="106" width="34" height="14" rx="2" fill="url(#nk-lcd)"/><text x="30" y="116.6" font-size="8.5" text-anchor="middle" fill="#1E2A1A" font-weight="700" font-family="ui-monospace,Consolas,monospace">${g2(U, 1)} V</text><text x="30" y="133" font-size="9" text-anchor="middle" fill="#3D2A00" font-weight="800">V</text></g>`;
-      /* ballon = de druk */
-      s += `<g class="nk-ballon" style="transform:scale(1);transform-origin:150px 64px"><path d="M150 64 V${64 - 6}" stroke="#A8241A" stroke-width="3"/><ellipse cx="150" cy="${58 - rb * .95}" rx="${rb * .86}" ry="${rb}" fill="url(#nk-ballon)" filter="url(#nk-schaduw)"/><ellipse cx="${150 - rb * .35}" cy="${58 - rb * 1.35}" rx="${rb * .2}" ry="${rb * .32}" fill="#fff" opacity=".5" transform="rotate(18 ${150 - rb * .35} ${58 - rb * 1.35})"/></g>`;
-      s += NK.tekst(150, Math.max(14, 58 - rb * 2 - 4), 'druk = spanning', { s: 10 });
-      /* ventiel = schakelaar */
-      s += `<g class="nk-ventiel" data-ventiel="1" style="cursor:pointer"><rect x="196" y="52" width="22" height="24" rx="5" fill="url(#nk-staal)" filter="url(#nk-schaduw)"/><circle cx="207" cy="44" r="9" fill="url(#nk-rood)"/><path d="M207 44 L${open ? 207 : 216} ${open ? 35 : 44}" stroke="#fff" stroke-width="3" stroke-linecap="round"/><rect x="186" y="30" width="42" height="56" fill="transparent"/></g>` + NK.tekst(207, 98, open ? 'ventiel open' : 'ventiel dicht', { s: 10 });
-      /* lampje */
+      for (let i = 0; i < n; i++) { const y = bodem - (i + 1) * ch; s += `<g filter="url(#nk-schaduw)"><rect x="72" y="${y + 2}" width="52" height="${ch - 3}" rx="5" fill="url(#nk-batt)"/><rect x="72" y="${y + 2}" width="52" height="${Math.max(4, ch * .28)}" rx="4" fill="url(#nk-batt-kop)"/><rect x="90" y="${y - 1}" width="16" height="4" rx="1.5" fill="url(#nk-alu)"/>` + (perCel ? `<text x="98" y="${y + ch * .5 + 7}" font-size="13" text-anchor="middle" fill="#fff" font-weight="700">${g2(cel, 1)} V</text>` : '') + `</g>`; }
+      if (!perCel) s += NK.tekst(98, top - 8, n + ' × ' + g2(cel, 1) + ' V', { s: 13 });
+      s += `<path d="M98 ${top} V70 H120" stroke="#D93A3A" stroke-width="5" fill="none" stroke-linecap="round"/>`;
+      s += `<path d="M70 ${top + 6} H34 V118 M70 ${bodem - 4} H34 V172" stroke="#D93A3A" stroke-width="2.4" fill="none"/>` +
+        `<g filter="url(#nk-schaduw)"><rect x="4" y="116" width="60" height="58" rx="8" fill="url(#nk-meter)"/><rect x="6" y="118" width="56" height="8" rx="4" fill="#fff" opacity=".35"/><rect x="9" y="126" width="50" height="22" rx="3" fill="url(#nk-lcd)" stroke="#5E6B55" stroke-width=".8"/><text x="34" y="142" font-size="13.5" text-anchor="middle" fill="#1E2A1A" font-weight="700" font-family="ui-monospace,Consolas,monospace">${g2(U, 1)} V</text><text x="34" y="168" font-size="14" text-anchor="middle" fill="#3D2A00" font-weight="800">V</text></g>`;
+      s += `<g class="nk-ballon"><path d="M168 70 V64" stroke="#A8241A" stroke-width="3"/><ellipse cx="168" cy="${64 - rb * .95}" rx="${rb * .86}" ry="${rb}" fill="url(#nk-ballon)" filter="url(#nk-schaduw)"/><ellipse cx="${168 - rb * .35}" cy="${64 - rb * 1.35}" rx="${rb * .2}" ry="${rb * .32}" fill="#fff" opacity=".5" transform="rotate(18 ${168 - rb * .35} ${64 - rb * 1.35})"/></g>`;
+      s += NK.tekst(168 - rb * .86 - 6, 34, 'druk = spanning', { s: 13, a: 'end' });
+      s += `<g class="nk-ventiel" data-ventiel="1" style="cursor:pointer"><rect x="228" y="56" width="30" height="30" rx="6" fill="url(#nk-staal)" filter="url(#nk-schaduw)"/><circle cx="243" cy="46" r="12" fill="url(#nk-rood)"/><path d="M243 46 L${open ? 243 : 255} ${open ? 34 : 46}" stroke="#fff" stroke-width="4" stroke-linecap="round"/><rect x="214" y="22" width="58" height="74" fill="transparent"/></g>` + NK.tekst(243, 108, open ? 'ventiel open' : 'ventiel dicht', { s: 13 });
       const gl = Math.min(1.2, (I / .5) ** 2);
-      s += `<g transform="translate(282 130) rotate(90)">${I > .03 ? `<circle cx="0" cy="-25" r="${24 + 12 * Math.min(1, gl)}" fill="url(#nk-gloei)" opacity="${Math.min(1, .35 + gl * .6)}"/>` : ''}<circle cx="0" cy="-25" r="12" fill="url(#nk-glas)" stroke="#9CC7E0" stroke-width="1.2"/>${I > .03 ? `<circle cx="0" cy="-25" r="11" fill="#FFE680" opacity="${Math.min(.85, gl * .7)}"/>` : ''}<rect x="-6" y="-14" width="12" height="10" rx="2" fill="url(#nk-alu)"/></g>`;
-      /* stroommeter in de buis */
-      s += `<g filter="url(#nk-schaduw)"><rect x="150" y="190" width="50" height="32" rx="6" fill="url(#nk-meter)"/><rect x="155" y="195" width="40" height="13" rx="2" fill="url(#nk-lcd)"/><text x="175" y="205" font-size="8.5" text-anchor="middle" fill="#1E2A1A" font-weight="700" font-family="ui-monospace,Consolas,monospace">${g2(I, 2)} A</text><text x="175" y="218" font-size="8.5" text-anchor="middle" fill="#3D2A00" font-weight="800">A</text></g>`;
+      s += `<g transform="translate(288 150) rotate(90) scale(1.5)">${I > .03 ? `<circle cx="0" cy="-25" r="${24 + 12 * Math.min(1, gl)}" fill="url(#nk-gloei)" opacity="${Math.min(1, .35 + gl * .6)}"/>` : ''}<circle cx="0" cy="-25" r="12" fill="url(#nk-glas)" stroke="#9CC7E0" stroke-width="1.2"/>${I > .03 ? `<circle cx="0" cy="-25" r="11" fill="#FFE680" opacity="${Math.min(.85, gl * .7)}"/>` : ''}<path d="M-3 -14 L-3 -23 L-1.5 -27 L0 -23 L1.5 -27 L3 -23 L3 -14" stroke="${I > .03 ? '#FF8A00' : '#7A6A60'}" stroke-width="1.4" fill="none"/><rect x="-6" y="-14" width="12" height="10" rx="2" fill="url(#nk-alu)"/></g>`;
+      s += `<g filter="url(#nk-schaduw)"><rect x="160" y="200" width="70" height="46" rx="8" fill="url(#nk-meter)"/><rect x="166" y="205" width="58" height="22" rx="3" fill="url(#nk-lcd)" stroke="#5E6B55" stroke-width=".8"/><text x="195" y="221" font-size="13.5" text-anchor="middle" fill="#1E2A1A" font-weight="700" font-family="ui-monospace,Consolas,monospace">${g2(I, 2)} A</text><text x="195" y="242" font-size="13" text-anchor="middle" fill="#3D2A00" font-weight="800">A</text></g>`;
       svg.innerHTML = s;
       const pad = sv('path', { d: PAD }); const laag = svg.querySelector('.nk-pompdots'); svg.append(sv('g', { opacity: 0 }, pad));
-      const L = pad.getTotalLength(), N = Math.round(L / 15);
-      wrap._dots = Array.from({ length: N }, (_, k) => { const c = sv('circle', { r: 3, class: 'nk-dot' }); laag.append(c); return { c, u: k / N }; }); wrap._pad = pad; wrap._L = L; wrap._I = I;
+      const L = pad.getTotalLength(), N = Math.round(L / 17);
+      wrap._dots = Array.from({ length: N }, (_, k) => { const c = sv('circle', { r: 3.8, class: 'nk-dot' }); laag.append(c); return { c, u: k / N }; }); wrap._pad = pad; wrap._L = L; wrap._I = I;
       plaatsDots(0);
       lees.innerHTML = `<span>Batterijen: <b>${n}</b> × ${g2(cel, 1)} V</span><span>Spanning: <b>${g2(U, 1)} V</b></span><span>Stroom: <b>${g2(I, 2)} A</b></span>`;
       knopMin.disabled = n <= 1; knopPlus.disabled = n >= max;
@@ -470,7 +466,7 @@
   const CILINDERS = [{ max: 50, groot: 10, k: 5 }, { max: 50, groot: 10, k: 10 }, { max: 100, groot: 20, k: 4 }, { max: 100, groot: 10, k: 5 }, { max: 250, groot: 50, k: 5 }, { max: 25, groot: 5, k: 5 }, { max: 200, groot: 50, k: 10 }];
   VIS.aflezen = (pod, p, api) => {
     defs();
-    const vis = h('div', { class: 'vis' }), svg = sv('svg', { viewBox: p.instrument === 'meter' ? '0 0 320 190' : '0 0 320 260', class: 'svgvis nk-afleesbeeld', role: 'img', 'aria-label': p.instrument === 'meter' ? 'Meter met wijzer' : 'Maatcilinder' });
+    const vis = h('div', { class: 'vis' }), svg = sv('svg', { viewBox: p.instrument === 'meter' ? '0 0 320 214' : '0 0 320 260', class: 'svgvis nk-afleesbeeld', role: 'img', 'aria-label': p.instrument === 'meter' ? 'Meter met wijzer' : 'Maatcilinder' });
     const vraag = h('div', { class: 'nk-af-vraag' }), f = fbEl();
     let ronde = 0, klaarGemeld = false, eersteFout = true;
     const E = p.eenheid || 'mL';
@@ -504,17 +500,17 @@
         for (let i = 0; i <= aantal; i++) {
           const v = i * streep, yy = y(v), groot = Math.abs(v / C0.groot - Math.round(v / C0.groot)) < 1e-9, half = C0.k % 2 === 0 && Math.abs((v / (C0.groot / 2)) - Math.round(v / (C0.groot / 2))) < 1e-9;
           s += `<path d="M${x1 - 2} ${yy.toFixed(1)} H${x1 - (groot ? 22 : half ? 15 : 10)}" stroke="#123E66" stroke-width="${groot ? 1.6 : 1}"/>`;
-          if (groot && v > 0) s += `<text x="${x1 + 6}" y="${(yy + 4).toFixed(1)}" font-size="11" fill="#123E66" font-weight="700">${NK.kort(v)}</text>`;
+          if (groot && v > 0) s += `<text x="${x1 + 6}" y="${(yy + 4).toFixed(1)}" font-size="13" fill="#123E66" font-weight="700">${NK.kort(v)}</text>`;
         }
-        s += NK.tekst(x1 + 6, top - 16, E, { s: 10 });
+        s += NK.tekst(x1 + 6, top - 16, E, { s: 13 });
         /* oog + kijklijn (parallax: schaal voor, vloeistof dieper) */
         if (dompelFase !== 1) {
           const D = 100, d = 26, kruis = oogY + (yv - oogY) * D / (D + d);
           const schijn = Math.max(0, Math.min(C0.max, Math.round((bodem - kruis) / (bodem - top) * C0.max / streep) * streep));
           s += `<path d="M48 ${oogY} L${(x0 + x1) / 2} ${yv}" stroke="#EA580C" stroke-width="1.6" stroke-dasharray="5 4"/><path d="M${x1 - 26} ${kruis.toFixed(1)} H${x1 + 2}" stroke="#EA580C" stroke-width="2.6"/>`;
           s += `<g transform="translate(36 ${oogY})" filter="url(#nk-schaduw)"><path d="M-16 0 C-8 -10 8 -10 16 0 C8 10 -8 10 -16 0Z" fill="#fff" stroke="#5A4A55" stroke-width="1.4"/><circle r="6" fill="#3A6FB0"/><circle r="3" fill="#1A0E14"/><circle cx="2" cy="-2" r="1.3" fill="#fff"/></g>`;
-          s += NK.tekst(36, oogY + 24, 'je oog', { s: 9.5 });
-          if (!opHoogte) s += NK.tekst(98, Math.min(250, Math.max(14, kruis - 8)), 'je ziet ' + NK.kort(schijn), { s: 10, k: '#C2410C' });
+          s += NK.tekst(36, oogY + 24, 'je oog', { s: 13 });
+          if (!opHoogte) s += NK.tekst(98, Math.min(250, Math.max(14, kruis - 8)), 'je ziet ' + NK.kort(schijn), { s: 13, k: '#C2410C' });
         }
         svg.innerHTML = s;
       };
@@ -576,14 +572,14 @@
       const soort = p.soort || 'A', bereiken = p.bereiken || (soort === 'A' ? [5, .5, .05] : [30, 15, 3]), smax = p.schaal || 50, groot = smax / 5;
       const bereik = pick(bereiken), stand = rnd(3, 24) * smax / 25, waarde = stand / smax * bereik;
       const hoek = v => -50 + v / smax * 100;
-      const pt = (a, r) => [160 + r * Math.sin(a * Math.PI / 180), 150 - r * Math.cos(a * Math.PI / 180)];
+      const pt = (a, r) => [160 + r * Math.sin(a * Math.PI / 180), 170 - r * Math.cos(a * Math.PI / 180)];
       const lab = b => (soort === 'A' ? NK.kort(b) + ' A' : NK.kort(b) + ' V');
-      let s = `<rect width="320" height="190" rx="16" fill="url(#nk-hout)"/><g filter="url(#nk-schaduw)"><rect x="40" y="10" width="240" height="172" rx="16" fill="url(#nk-meter)"/></g><rect x="52" y="20" width="216" height="110" rx="10" fill="#FFFDF4" stroke="#C29210" stroke-width="1.5"/>`;
-      for (let i = 0; i <= 25; i++) { const v = i * smax / 25, a = hoek(v), [xa, ya] = pt(a, 96), [xb, yb] = pt(a, i % 5 === 0 ? 82 : 88); s += `<path d="M${xa.toFixed(1)} ${ya.toFixed(1)} L${xb.toFixed(1)} ${yb.toFixed(1)}" stroke="#2B1726" stroke-width="${i % 5 === 0 ? 1.8 : 1}"/>`; if (i % 5 === 0) { const [xt, yt] = pt(a, 72); s += `<text x="${xt.toFixed(1)}" y="${(yt + 4).toFixed(1)}" font-size="11" text-anchor="middle" fill="#2B1726" font-weight="700">${NK.kort(v)}</text>`; } }
-      const [xn, yn] = pt(hoek(stand), 98);
-      s += `<path d="M160 150 L${xn.toFixed(1)} ${yn.toFixed(1)}" stroke="#D93A3A" stroke-width="2.4" stroke-linecap="round"/><circle cx="160" cy="150" r="6" fill="#2E3440"/><text x="160" y="124" font-size="18" text-anchor="middle" fill="#2B1726" font-weight="700">${soort}</text>`;
+      let s = `<rect width="320" height="214" rx="16" fill="url(#nk-hout)"/><g filter="url(#nk-schaduw)"><rect x="26" y="6" width="268" height="202" rx="16" fill="url(#nk-meter)"/><rect x="30" y="8" width="260" height="10" rx="5" fill="#fff" opacity=".35"/></g><rect x="38" y="16" width="244" height="132" rx="10" fill="#FFFDF4" stroke="#C29210" stroke-width="1.5"/>`;
+      for (let i = 0; i <= 25; i++) { const v = i * smax / 25, a = hoek(v), [xa, ya] = pt(a, 128), [xb, yb] = pt(a, i % 5 === 0 ? 110 : 118); s += `<path d="M${xa.toFixed(1)} ${ya.toFixed(1)} L${xb.toFixed(1)} ${yb.toFixed(1)}" stroke="#2B1726" stroke-width="${i % 5 === 0 ? 1.8 : 1}"/>`; if (i % 5 === 0) { const [xt, yt] = pt(a, 96); s += `<text x="${xt.toFixed(1)}" y="${(yt + 4).toFixed(1)}" font-size="13" text-anchor="middle" fill="#2B1726" font-weight="700">${NK.kort(v)}</text>`; } }
+      const [xn, yn] = pt(hoek(stand), 126);
+      s += `<path d="M160 170 L${xn.toFixed(1)} ${yn.toFixed(1)}" stroke="#D93A3A" stroke-width="2.6" stroke-linecap="round"/><circle cx="160" cy="170" r="7" fill="#2E3440"/><text x="160" y="140" font-size="18" text-anchor="middle" fill="#2B1726" font-weight="700">${soort}</text>`;
       const bus = ['COM', ...bereiken];
-      bus.forEach((b, j) => { const x = 70 + j * (180 / (bus.length - 1)); s += `<circle cx="${x}" cy="158" r="8" fill="#2E3440" stroke="#8A939E" stroke-width="2"/><text x="${x}" y="177" font-size="9.5" text-anchor="middle" fill="#3D2A00" font-weight="800">${j ? lab(b) : 'COM'}</text>`; if (j === 0) s += `<path d="M${x} 158 C${x - 10} 186 ${x - 30} 190 ${x - 40} 192" stroke="#2E3440" stroke-width="5" fill="none"/>`; if (b === bereik) s += `<path d="M${x} 158 C${x + 10} 186 ${x + 30} 190 ${x + 40} 192" stroke="#D93A3A" stroke-width="5" fill="none"/><circle cx="${x}" cy="158" r="5" fill="#D93A3A"/>`; });
+      bus.forEach((b, j) => { const x = 54 + j * (212 / (bus.length - 1)); s += `<circle cx="${x}" cy="178" r="9" fill="#2E3440" stroke="#8A939E" stroke-width="2"/><text x="${x}" y="163" font-size="13" text-anchor="middle" fill="#3D2A00" font-weight="800">${j ? lab(b) : 'COM'}</text>`; if (j === 0) s += `<path d="M${x} 178 C${x - 6} 196 ${x - 16} 206 ${x - 26} 212" stroke="#2E3440" stroke-width="5" fill="none"/>`; if (b === bereik) s += `<path d="M${x} 178 C${x + 6} 196 ${x + 16} 206 ${x + 26} 212" stroke="#D93A3A" stroke-width="5" fill="none"/><circle cx="${x}" cy="178" r="6" fill="#D93A3A"/>`; });
       svg.innerHTML = s;
       stelVraag('Waar zit het <b>rode snoer</b>? Welk meetbereik is gekozen?', bereiken.map(b => ({ t: lab(b), goed: b === bereik, w: `Het bereik is ${lab(b)}: de hele schaal (${NK.kort(smax)}) is dan ${lab(b)}.`, fout: 'Kijk waar het rode snoer in zit. Het zwarte zit altijd in COM.', mis: p.misBereik })), () => {
         const w = v => (soort === 'A' ? NK.kort(v) + ' A' : NK.kort(v) + ' V');
@@ -628,7 +624,7 @@
     const P = (x, y, z) => [ox + (x - y) * s * .87, oy + (x + y) * s * .5 - z * s], q = a => a[0].toFixed(1) + ' ' + a[1].toFixed(1);
     const A = P(0, 0, 0), Bq = P(l, 0, 0), Cq = P(l, b, 0), D = P(0, b, 0), A2 = P(0, 0, hh), B2 = P(l, 0, hh), C2 = P(l, b, hh), D2 = P(0, b, hh);
     return `<path d="M${q(D)} L${q(Cq)} L${q(Bq)} L${q(B2)} L${q(A2)} L${q(D2)}Z" fill="#fff" fill-opacity=".35" stroke="#5A4A55" stroke-width="1.6" stroke-dasharray="5 4"/><path d="M${q(D2)} L${q(C2)} L${q(B2)} M${q(C2)} L${q(Cq)}" stroke="#5A4A55" stroke-width="1.6" stroke-dasharray="5 4" fill="none"/>` +
-      NK.tekst((Bq[0] + Cq[0]) / 2 + 12, (Bq[1] + Cq[1]) / 2 + 12, b + ' cm', { s: 11 }) + NK.tekst((D[0] + Cq[0]) / 2 - 12, (D[1] + Cq[1]) / 2 + 14, l + ' cm', { s: 11 }) + NK.tekst(D[0] - 10, (D[1] + D2[1]) / 2, hh + ' cm', { s: 11, a: 'end' });
+      NK.tekst((Bq[0] + Cq[0]) / 2 + 12, (Bq[1] + Cq[1]) / 2 + 12, b + ' cm', { s: 13 }) + NK.tekst((D[0] + Cq[0]) / 2 - 12, (D[1] + Cq[1]) / 2 + 14, l + ' cm', { s: 13 }) + NK.tekst(D[0] - 10, (D[1] + D2[1]) / 2, hh + ' cm', { s: 13, a: 'end' });
   }
   VIS.blokbouwer = (pod, p, api) => {
     defs();
@@ -642,10 +638,10 @@
         let s = ach + `<ellipse cx="${cx}" cy="${ty + hpx}" rx="${R0}" ry="20" fill="#000" opacity=".12" transform="translate(4 8)"/>`;
         s += `<path d="M${cx - R0} ${ty} V${ty + hpx} A${R0} 20 0 0 0 ${cx + R0} ${ty + hpx} V${ty}Z" fill="url(#nk-alu)"/><path d="M${cx - R0 + 10} ${ty + 8} V${ty + hpx}" stroke="#fff" stroke-width="6" opacity=".6"/><path d="M${cx + R0 - 14} ${ty + 6} V${ty + hpx + 6}" stroke="#6E7783" stroke-width="10" opacity=".25"/>`;
         s += `<ellipse cx="${cx}" cy="${ty}" rx="${R0}" ry="20" fill="#F2F5F8" stroke="#98A2AE" stroke-width="1.5"/>`;
-        if (groot) s += `<ellipse cx="${cx}" cy="${ty}" rx="${R0 * 2}" ry="40" fill="#DB5A4A" fill-opacity=".14" stroke="#DB5A4A" stroke-width="2" stroke-dasharray="6 4"/>` + NK.tekst(cx, ty - 46, 'straal = diameter: 4 keer zo groot!', { s: 11, k: '#B42A1E' });
-        s += `<path d="M${cx - R0} ${ty} H${cx + R0}" stroke="#2F7FB8" stroke-width="2.4"/>` + NK.tekst(cx - R0 / 2, ty - 6, 'd = ' + d + ' cm', { s: 11, k: '#1E5A86' });
-        if (toonR) s += `<path d="M${cx} ${ty} H${cx + R0}" stroke="#EA580C" stroke-width="4" stroke-linecap="round"/><circle cx="${cx}" cy="${ty}" r="3.4" fill="#EA580C"/>` + NK.tekst(cx + R0 / 2, ty + 16, 'r = ' + NK.kort(r) + ' cm', { s: 11, k: '#C2410C' });
-        s += `<path d="M${cx + R0 + 16} ${ty} V${ty + hpx}" stroke="#5A4A55" stroke-width="1.6"/><path d="M${cx + R0 + 11} ${ty} H${cx + R0 + 21} M${cx + R0 + 11} ${ty + hpx} H${cx + R0 + 21}" stroke="#5A4A55" stroke-width="1.6"/>` + NK.tekst(cx + R0 + 22, ty + hpx / 2 + 4, 'h = ' + hh + ' cm', { s: 11, a: 'start' });
+        if (groot) s += `<ellipse cx="${cx}" cy="${ty}" rx="${R0 * 2}" ry="40" fill="#DB5A4A" fill-opacity=".14" stroke="#DB5A4A" stroke-width="2" stroke-dasharray="6 4"/>` + NK.tekst(cx, ty - 46, 'straal = diameter: 4 keer zo groot!', { s: 13, k: '#B42A1E' });
+        s += `<path d="M${cx - R0} ${ty} H${cx + R0}" stroke="#2F7FB8" stroke-width="2.4"/>` + NK.tekst(cx - R0 / 2, ty - 6, 'd = ' + d + ' cm', { s: 13, k: '#1E5A86' });
+        if (toonR) s += `<path d="M${cx} ${ty} H${cx + R0}" stroke="#EA580C" stroke-width="4" stroke-linecap="round"/><circle cx="${cx}" cy="${ty}" r="3.4" fill="#EA580C"/>` + NK.tekst(cx + R0 / 2, ty + 16, 'r = ' + NK.kort(r) + ' cm', { s: 13, k: '#C2410C' });
+        s += `<path d="M${cx + R0 + 16} ${ty} V${ty + hpx}" stroke="#5A4A55" stroke-width="1.6"/><path d="M${cx + R0 + 11} ${ty} H${cx + R0 + 21} M${cx + R0 + 11} ${ty + hpx} H${cx + R0 + 21}" stroke="#5A4A55" stroke-width="1.6"/>` + NK.tekst(cx + R0 + 22, ty + hpx / 2 + 4, 'h = ' + hh + ' cm', { s: 13, a: 'start' });
         svg.innerHTML = s;
       };
       teken(false, false);
@@ -725,8 +721,8 @@
     }
     function teken() {
       let t = ach;
-      if (fase < 2) { t += fase === 0 ? solide(B.l, B.b, B.h, 160, 150) : blok(B.l, B.b, B.h, 160, 150, true); t += NK.tekst(160, 206, `${B.l} × ${B.b} × ${B.h} cm · ${NK.kort(B.m)} g`, { s: 12 }); if (fase === 1) t += NK.tekst(160, 22, `elk blokje: ${NK.kort(B.m)} : ${V} = ${g2(rho, rho < 10 ? 2 : 1)} g`, { s: 12, k: '#C2410C' }); }
-      else { const half = B.l / 2; t += blok(half, B.b, B.h, 100, 150, true) + blok(half, B.b, B.h, 226, 150, true); t += NK.tekst(92, 206, `${NK.kort(B.m / 2)} g · ${V / 2} cm³`, { s: 11 }) + NK.tekst(232, 206, `${NK.kort(B.m / 2)} g · ${V / 2} cm³`, { s: 11 }) + `<path d="M160 30 V200" stroke="#DB5A4A" stroke-width="2" stroke-dasharray="6 4"/>`; }
+      if (fase < 2) { t += fase === 0 ? solide(B.l, B.b, B.h, 160, 150) : blok(B.l, B.b, B.h, 160, 150, true); t += NK.tekst(160, 206, `${B.l} × ${B.b} × ${B.h} cm · ${NK.kort(B.m)} g`, { s: 13 }); if (fase === 1) t += NK.tekst(160, 22, `elk blokje: ${NK.kort(B.m)} : ${V} = ${g2(rho, rho < 10 ? 2 : 1)} g`, { s: 13, k: '#C2410C' }); }
+      else { const half = B.l / 2; t += blok(half, B.b, B.h, 100, 150, true) + blok(half, B.b, B.h, 226, 150, true); t += NK.tekst(92, 206, `${NK.kort(B.m / 2)} g · ${V / 2} cm³`, { s: 13 }) + NK.tekst(232, 206, `${NK.kort(B.m / 2)} g · ${V / 2} cm³`, { s: 13 }) + `<path d="M160 30 V200" stroke="#DB5A4A" stroke-width="2" stroke-dasharray="6 4"/>`; }
       svg.innerHTML = t;
     }
     const verdeel = knopje('Verdeel in blokjes van 1 cm³', () => {
@@ -777,7 +773,7 @@
       s += `<path d="M${x0} ${opp} C${x0 + 30} ${opp - 3} ${x0 + 60} ${opp + 3} ${x0 + 90} ${opp} C${x0 + 120} ${opp - 3} ${x0 + 150} ${opp + 3} ${x1} ${opp}" stroke="#fff" stroke-width="2" fill="none" opacity=".75"/>`;
       if (vw) s += `<g class="nk-zdvw${fase ? ' val' : ''}" style="transform:translateY(${y}px)">${`<g transform="translate(${160 - 32} 0) scale(.64)">${typeof vw.beeld === 'string' ? vw.beeld : ''}</g>`}</g>`;
       s += `<path d="M${x0} 50 V${bodem} H${x1} V50" stroke="#8CC6E8" stroke-width="5" fill="none" opacity=".9" stroke-linejoin="round"/><path d="M${x0 + 4} 56 V${bodem - 6}" stroke="#fff" stroke-width="3" opacity=".6"/>`;
-      s += NK.tekst(x1 - 6, bodem - 10, `${vl.naam} · ${g2(vl.rho, vl.rho % 1 ? 2 : 1)} g/cm³`, { s: 10.5, a: 'end' });
+      s += NK.tekst(x1 - 6, bodem - 10, `${vl.naam} · ${g2(vl.rho, vl.rho % 1 ? 2 : 1)} g/cm³`, { s: 13, a: 'end' });
       svg.innerHTML = s;
     }
     function toon() {
@@ -819,7 +815,7 @@
     function tekenTrap() {
       const n = trap.length, bw = 300 / n;
       let s = `<rect width="320" height="130" rx="14" fill="url(#nk-hout)"/>`;
-      trap.forEach((e, i) => { const x = 10 + i * bw, y = 20 + i * (54 / Math.max(1, n - 1)); const hgt = 120 - y; s += `<g filter="url(#nk-schaduw)"><rect x="${x}" y="${y}" width="${bw - 4}" height="${hgt}" rx="4" fill="url(#nk-houtje)"/><rect x="${x}" y="${y}" width="${bw - 4}" height="5" rx="2.5" fill="#F4CF98"/></g>` + NK.tekst(x + bw / 2 - 2, y + 26, e, { s: 16 }); if (i < n - 1) s += NK.tekst(x + bw - 2, y + 10, '× 1000 ↘', { s: 9.5, k: '#C2410C', a: 'start' }); });
+      trap.forEach((e, i) => { const x = 10 + i * bw, y = 20 + i * (54 / Math.max(1, n - 1)); const hgt = 120 - y; s += `<g filter="url(#nk-schaduw)"><rect x="${x}" y="${y}" width="${bw - 4}" height="${hgt}" rx="4" fill="url(#nk-houtje)"/><rect x="${x}" y="${y}" width="${bw - 4}" height="5" rx="2.5" fill="#F4CF98"/></g>` + NK.tekst(x + bw / 2 - 2, y + 26, e, { s: 16 }); if (i < n - 1) s += NK.tekst(x + bw - 2, y + 10, '× 1000 ↘', { s: 13, k: '#C2410C', a: 'start' }); });
       const x = 10 + idx * bw + bw / 2 - 2, y = 20 + idx * (54 / Math.max(1, n - 1));
       s += `<g transform="translate(${x} ${y - 2})"><circle r="9" cy="-9" fill="url(#nk-ballon)" stroke="#A8241A"/><ellipse cx="-3" cy="-12" rx="3" ry="2" fill="#fff" opacity=".7"/></g>`;
       svg.innerHTML = s;
@@ -887,7 +883,7 @@
       if (pl.id === 'mars') s += `<circle cx="60" cy="36" r="10" fill="#FFF3D6" opacity=".9"/><path d="M0 130 C70 116 150 132 230 118 C270 112 300 120 320 116 V160 H0Z" fill="#C2552A" opacity=".55"/>`;
       s += `<path d="M0 150 C80 142 200 156 320 146 V210 H0Z" fill="${grond}"/>` + (pl.id === 'maan' ? `<ellipse cx="60" cy="176" rx="22" ry="6" fill="#8E8E99" opacity=".6"/><ellipse cx="250" cy="186" rx="30" ry="7" fill="#8E8E99" opacity=".6"/>` : '');
       /* weegschaal (meet hoe hard je drukt = gewicht) */
-      s += `<g filter="url(#nk-schaduw)"><rect x="96" y="160" width="76" height="16" rx="6" fill="url(#nk-pak)"/><rect x="112" y="163" width="44" height="10" rx="2" fill="url(#nk-lcd)"/></g><text x="134" y="171" font-size="8" text-anchor="middle" fill="#1E2A1A" font-weight="700" font-family="ui-monospace,Consolas,monospace">${g2(N, 0)} N</text>`;
+      s += `<g filter="url(#nk-schaduw)"><rect x="90" y="158" width="88" height="22" rx="7" fill="url(#nk-pak)"/><rect x="102" y="160" width="64" height="18" rx="3" fill="url(#nk-lcd)"/></g><text x="134" y="174" font-size="13" text-anchor="middle" fill="#1E2A1A" font-weight="700" font-family="ui-monospace,Consolas,monospace">${g2(N, 0)} N</text>`;
       /* astronaut */
       s += `<g class="nk-astro ${pl.id}"><g filter="url(#nk-schaduw)"><rect x="118" y="132" width="11" height="28" rx="5" fill="url(#nk-pak)"/><rect x="138" y="132" width="11" height="28" rx="5" fill="url(#nk-pak)"/><rect x="114" y="154" width="18" height="8" rx="4" fill="#5A606C"/><rect x="136" y="154" width="18" height="8" rx="4" fill="#5A606C"/>` +
         `<path d="M110 136 C108 104 116 92 134 92 C152 92 160 104 158 136Z" fill="url(#nk-pak)"/><rect x="124" y="104" width="20" height="14" rx="3" fill="#D5DBE2"/><circle cx="129" cy="111" r="2" fill="#EA580C"/><circle cx="137" cy="111" r="2" fill="#1F9E72"/>` +
@@ -895,8 +891,8 @@
         `<circle cx="134" cy="72" r="24" fill="url(#nk-pak)"/><rect x="117" y="60" width="34" height="24" rx="12" fill="url(#nk-vizier)"/>` + NK.oog(127, 72, 3.2, { lid: '#3F8FD0', iris: '#5A3A2A' }) + NK.oog(141, 72, 3.2, { lid: '#3F8FD0', iris: '#5A3A2A' }) +
         `<path d="M129 79 C132 81 136 81 139 79" stroke="#fff" stroke-width="1.4" fill="none" opacity=".8"/><ellipse cx="124" cy="64" rx="6" ry="3" fill="#fff" opacity=".65"/></g></g>`;
       /* balans: massa vergelijken met gewichtjes (werkt overal hetzelfde) */
-      s += `<g transform="translate(236 104)" filter="url(#nk-schaduw)"><rect x="-4" y="0" width="8" height="46" fill="url(#nk-staal)"/><rect x="-24" y="44" width="48" height="8" rx="3" fill="url(#nk-houtje)"/><path d="M-36 0 H36" stroke="url(#nk-staal)" stroke-width="4" stroke-linecap="round"/><path d="M-36 0 L-44 18 H-28Z M36 0 L28 18 H44Z" fill="none" stroke="#6E7783" stroke-width="1.2"/><rect x="-46" y="18" width="20" height="4" rx="2" fill="url(#nk-staal)"/><rect x="26" y="18" width="20" height="4" rx="2" fill="url(#nk-staal)"/><rect x="-42" y="8" width="12" height="10" rx="2" fill="url(#nk-goud)"/><circle cx="36" cy="12" r="6" fill="url(#nk-pak)"/></g>` + NK.tekst(236, 98, `massa: ${m} kg`, { s: 11 });
-      s += NK.tekst(134, 200, `gewicht: ${g2(N, 0)} N`, { s: 11 });
+      s += `<g transform="translate(236 104)" filter="url(#nk-schaduw)"><rect x="-4" y="0" width="8" height="46" fill="url(#nk-staal)"/><rect x="-24" y="44" width="48" height="8" rx="3" fill="url(#nk-houtje)"/><path d="M-36 0 H36" stroke="url(#nk-staal)" stroke-width="4" stroke-linecap="round"/><path d="M-36 0 L-44 18 H-28Z M36 0 L28 18 H44Z" fill="none" stroke="#6E7783" stroke-width="1.2"/><rect x="-46" y="18" width="20" height="4" rx="2" fill="url(#nk-staal)"/><rect x="26" y="18" width="20" height="4" rx="2" fill="url(#nk-staal)"/><rect x="-42" y="8" width="12" height="10" rx="2" fill="url(#nk-goud)"/><circle cx="36" cy="12" r="6" fill="url(#nk-pak)"/></g>` + NK.tekst(236, 98, `massa: ${m} kg`, { s: 13 });
+      s += NK.tekst(134, 200, `gewicht: ${g2(N, 0)} N`, { s: 13 });
       svg.innerHTML = s;
       panel.innerHTML = `<span>${pl.naam}</span><span>massa: <b>${m} kg</b></span><span>gewicht: <b>${g2(N, 0)} N</b></span><span>${g2(pl.g, 1)} N per kg</span>`;
     }
@@ -934,7 +930,7 @@
       s += `<defs><clipPath id="${id}"><rect x="170" y="10" width="${Math.max(0, max) / 100 * 140}" height="180"/></clipPath></defs>`;
       s += `<rect x="170" y="10" width="140" height="180" rx="8" fill="#0E1424" stroke="#5A6A86" stroke-width="2"/>`;
       s += `<g clip-path="url(#${id})"><g transform="translate(176 22) scale(.86)"><g fill="#5C6782">${HAND}</g><g stroke="#F4F6FA" stroke-linecap="round" fill="none">${BOTTEN}</g></g></g>`;
-      s += NK.tekst(240, 200 - 4, 'de röntgenfoto', { s: 10 }) + NK.tekst(82, 196 - 2, 'hand op de fotoplaat', { s: 10 });
+      s += NK.tekst(240, 200 - 4, 'de röntgenfoto', { s: 13 }) + NK.tekst(82, 196 - 2, 'hand op de fotoplaat', { s: 13 });
       svg.innerHTML = s;
     }
     const schuif = h('input', { type: 'range', min: 0, max: 100, step: 1, value: 0, class: 'nk-rontgen-schuif', 'aria-label': 'Röntgenbron verschuiven' });

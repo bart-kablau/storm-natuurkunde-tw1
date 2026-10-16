@@ -97,7 +97,8 @@ const NK = (() => {
      ======================================================================= */
   const normDraad = d => Array.isArray(d) ? { a: d[0], b: d[1], ...(d[2] || {}) } : d;
   const aansl = c => c.soort === 'batterij' ? ['n', 'p'] : c.soort === 'knoop' ? ['k'] : ['a', 'b'];
-  const halve = c => c.w ?? (c.soort === 'batterij' ? 8 + 12 * (c.cellen || 1) : c.soort === 'gat' ? 24 : c.soort === 'knoop' ? 0 : c.soort === 'plek' ? 14 : 20);
+  const S = 1.6; /* schaal van alle kringonderdelen t.o.v. de basistekening */
+  const halve = c => c.w ?? S * (c.soort === 'batterij' ? 8 + 12 * (c.cellen || 1) : c.soort === 'gat' ? 24 : c.soort === 'knoop' ? 0 : c.soort === 'plek' ? 14 : 20);
   const spanningVan = c => c.U ?? (c.cellen || 1) * (c.cel ?? 1.5);
   function bouw(def) {
     const per = {}; def.onderdelen.forEach(c => per[c.id] = c);
@@ -197,11 +198,12 @@ const NK = (() => {
     plastic: () => `<rect x="-15" y="-4.5" width="30" height="9" rx="1.5" fill="url(#nk-plastic)" opacity=".9"/>${[-12, -9, -6, -3, 0, 3, 6, 9, 12].map((x, i) => `<path d="M${x} -4.5 v${i % 2 ? 2.5 : 4}" stroke="#123E66" stroke-width=".7"/>`).join('')}`,
     hout: () => `<rect x="-15" y="-3" width="30" height="6" rx="1.5" fill="url(#nk-houtje)"/><path d="M-12 -1 C-4 -2 4 0 12 -1 M-10 1.5 C-2 .5 6 2 13 1" stroke="#8E5A2C" stroke-width=".6" fill="none" opacity=".7"/>`,
     munt: () => `<ellipse cx="0" cy="0" rx="9" ry="7" fill="url(#nk-goud)" stroke="#9A6A08" stroke-width=".8"/><ellipse cx="0" cy="0" rx="6" ry="4.5" fill="none" stroke="#FFF2AE" stroke-width=".8"/>`,
-    lucht: () => '',
+    lucht: () => `<path d="M-12 -3 C-8 -7 -4 -7 -1 -3 C2 -7 7 -7 9 -3 M-9 3 C-5 -1 -1 -1 2 3 C5 -1 9 -1 12 3" stroke="#7FB4D8" stroke-width="1.2" fill="none" stroke-linecap="round" opacity=".9"/>`,
     water: () => `<path d="M-9 0 C-9 -6 -4 -7 0 -7 C4 -7 9 -6 9 0 C9 5 5 7 0 7 C-5 7 -9 5 -9 0Z" fill="url(#nk-water)" opacity=".8"/>`,
   };
-  function onderdeel(c, opl, schema, opts) {
-    const w = halve(c), id = c.id;
+  const onderdeel = (c, opl, schema, opts) => `<g transform="scale(${S})">${onderdeelBasis(c, opl, schema, opts)}</g>`;
+  function onderdeelBasis(c, opl, schema, opts) {
+    const w = halve(c) / S, id = c.id;
     const lampSt = opl.lamp[id] || { gloed: 0, aan: false };
     const meterTxt = () => { const v = opl.meter[id]; if (c.verborgen) return '?'; if (v == null) return '–'; return c.soort === 'meterV' || c.inhoud === 'V' ? getal(v, c.dec ?? 1) + ' V' : (c.mA ? getal(v * 1000, 0) + ' mA' : getal(v, c.dec ?? 2) + ' A'); };
     const isV = c.soort === 'meterV' || c.inhoud === 'V';
@@ -220,7 +222,8 @@ const NK = (() => {
           const x0 = -w + 6 + i * 24;
           s += `<g filter="url(#nk-schaduw)"><rect x="${x0}" y="-8" width="19" height="16" rx="3" fill="url(#nk-batt)"/><rect x="${x0 + 12}" y="-8" width="7" height="16" rx="2" fill="url(#nk-batt-kop)"/>` +
             `<rect x="${x0 + 19}" y="-3.2" width="3.2" height="6.4" rx="1" fill="url(#nk-alu)"/><rect x="${x0 + 1.5}" y="-6.8" width="16" height="2.4" rx="1.2" fill="#fff" opacity=".22"/>` +
-            `<text x="${x0 + 6}" y="3" font-size="5.4" text-anchor="middle" fill="#fff" font-weight="700">${getal(cel, 1)}V</text><text x="${x0 + 16}" y="3" font-size="6.5" text-anchor="middle" fill="#5A3A00" font-weight="800">+</text></g>`;
+            `<text x="${x0 + 6.5}" y="2.4" font-size="6" text-anchor="middle" fill="#fff" font-weight="700">${getal(cel, 1)}</text><text x="${x0 + 15.5}" y="3.3" font-size="9" text-anchor="middle" fill="#3D2400" font-weight="800">+</text>` +
+            (i === 0 ? `<text transform="rotate(${-(c.rot || 0)} ${x0 - 4} -12.5)" x="${x0 - 4}" y="-9.5" font-size="9" text-anchor="middle" fill="#2E3440" font-weight="800" stroke="#fff" stroke-width="2" paint-order="stroke">−</text>` : '') + (i === n - 1 ? `<text transform="rotate(${-(c.rot || 0)} ${x0 + 24} -12.5)" x="${x0 + 24}" y="-9.5" font-size="9" text-anchor="middle" fill="#B42A1E" font-weight="800" stroke="#fff" stroke-width="2" paint-order="stroke">+</text>` : '') + `</g>`;
         }
         return s;
       }
@@ -254,7 +257,7 @@ const NK = (() => {
         if ((c.soort === 'plek' || c.soort === 'plekOver') && !c.inhoud) {
           if (c.soort === 'plekOver') return '';
           const kab = schema ? `<path d="M${-w} 0 H${w}" stroke="#2B1726" stroke-width="2.2"/>` : `<path d="M${-w} 0 H${w}" stroke="${c.kleur || '#2F7FB8'}" stroke-width="5" stroke-linecap="round"/><path d="M${-w} -.8 H${w}" stroke="#fff" stroke-width="1.4" opacity=".35"/>`;
-          return kab + (opts.plekMarkers ? `<g class="nk-plekteken"><circle r="10" fill="#fff" fill-opacity=".85" stroke="#EA580C" stroke-width="2" stroke-dasharray="4 3"/><path d="M-4.5 0 H4.5 M0 -4.5 V4.5" stroke="#EA580C" stroke-width="2.2" stroke-linecap="round"/></g>` : '');
+          return kab + (opts.plekMarkers ? `<g class="nk-plekteken"><circle r="15" fill="transparent"/><circle r="10" fill="#fff" fill-opacity=".85" stroke="#EA580C" stroke-width="2" stroke-dasharray="4 3"/><path d="M-4.5 0 H4.5 M0 -4.5 V4.5" stroke="#EA580C" stroke-width="2.2" stroke-linecap="round"/></g>` : '');
         }
         const letter = isV ? 'V' : 'A';
         if (schema) return `<path d="M${-w} 0 H-10 M10 0 H${w}" stroke="#2B1726" stroke-width="2.2"/><circle r="10" fill="#fff" stroke="#2B1726" stroke-width="2.2"/><text y="4.3" font-size="12.5" text-anchor="middle" fill="#2B1726" font-weight="700">${letter}</text>` +
@@ -287,25 +290,43 @@ const NK = (() => {
     if (!d.via && A[0] !== Bp[0] && A[1] !== Bp[1]) pts.splice(1, 0, d.eerst === 'v' ? [A[0], Bp[1]] : [Bp[0], A[1]]);
     return 'M' + pts.map(p => p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' L');
   };
+  /* tekenvlak: standaard passend om de schakeling (def.vbVast = true houdt def.vb) */
+  function vakVan(def) {
+    if (def.vbVast && def.vb) return def.vb.split(' ').map(Number);
+    const B = bouw(def), pts = [];
+    const voeg = (x, y) => pts.push([x, y]);
+    def.onderdelen.forEach(c => {
+      if (c.soort === 'plekOver') { const o = B.per[c.over], t2 = aansl(o), A = B.pos(o.id + '.' + t2[0]), Q = B.pos(o.id + '.' + t2[1]), off = c.af ?? -30, rr = (o.rot || 0) * Math.PI / 180; const mx = (A[0] + Q[0]) / 2 + Math.sin(rr) * off, my = (A[1] + Q[1]) / 2 + Math.cos(rr) * off; voeg(mx - 28, my - 28); voeg(mx + 28, my + 28); return; }
+      const w = halve(c), vert = Math.abs((c.rot || 0) % 180) === 90;
+      const boven = c.soort === 'lamp' ? 64 : c.soort === 'batterij' ? 24 : c.soort === 'knoop' ? 8 : 28, onder = c.soort === 'lamp' ? 16 : 26;
+      if (vert) { voeg(c.x - boven, c.y - w); voeg(c.x + onder, c.y + w); } else { voeg(c.x - w, c.y - boven); voeg(c.x + w, c.y + onder); }
+      if (c.label || c.soort === 'batterij') { const lx = c.lx ?? (vert ? c.x + 40 : c.x), ly = c.ly ?? (vert ? c.y : c.y + 36); voeg(lx - 34, ly - 14); voeg(lx + 34, ly + 6); }
+    });
+    B.draden.forEach(d => { voeg(...B.pos(d.a)); voeg(...B.pos(d.b)); (d.via || []).forEach(p => voeg(...p)); });
+    const m = 22, xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
+    let x0 = Math.min(...xs) - m, x1 = Math.max(...xs) + m, y0 = Math.min(...ys) - m, y1 = Math.max(...ys) + m;
+    if (x1 - x0 < 230) { const c = (x0 + x1) / 2; x0 = c - 115; x1 = c + 115; }
+    return [x0, y0, x1 - x0, y1 - y0].map(v => Math.round(v));
+  }
   /* de hele schakeling als markup. opts: schema, aansluit (bouwmodus), plekMarkers, waarden, toonKapot, labels */
   function markup(def, opl, opts = {}) {
     const B = bouw(def), schema = !!opts.schema;
-    const [, , W, H] = (def.vb || '0 0 320 200').split(' ').map(Number);
+    const [X0, Y0, W, H] = vakVan(def);
     let s = schema
-      ? `<rect width="${W}" height="${H}" rx="14" fill="url(#nk-papier)"/>` + Array.from({ length: Math.floor(W / 16) }, (_, i) => `<path d="M${i * 16 + 8} 0 V${H}" stroke="#CFE3F2" stroke-width=".6"/>`).join('') + Array.from({ length: Math.floor(H / 16) }, (_, i) => `<path d="M0 ${i * 16 + 8} H${W}" stroke="#CFE3F2" stroke-width=".6"/>`).join('')
-      : `<rect width="${W}" height="${H}" rx="14" fill="url(#nk-hout)"/><path d="M0 ${H * .3} C${W * .3} ${H * .26} ${W * .6} ${H * .34} ${W} ${H * .29} M0 ${H * .72} C${W * .35} ${H * .68} ${W * .7} ${H * .76} ${W} ${H * .7}" stroke="#B9824E" stroke-width="1.2" fill="none" opacity=".35"/><rect width="${W}" height="${H}" rx="14" fill="none" stroke="#B9824E" stroke-width="2" opacity=".5"/><ellipse cx="${W * .3}" cy="${H * .2}" rx="${W * .35}" ry="${H * .14}" fill="#fff" opacity=".12"/>`;
+      ? `<g transform="translate(${X0} ${Y0})"><rect width="${W}" height="${H}" rx="14" fill="url(#nk-papier)"/>` + Array.from({ length: Math.floor(W / 16) }, (_, i) => `<path d="M${i * 16 + 8} 0 V${H}" stroke="#CFE3F2" stroke-width=".6"/>`).join('') + Array.from({ length: Math.floor(H / 16) }, (_, i) => `<path d="M0 ${i * 16 + 8} H${W}" stroke="#CFE3F2" stroke-width=".6"/>`).join('') + '</g>'
+      : `<g transform="translate(${X0} ${Y0})"><rect width="${W}" height="${H}" rx="14" fill="url(#nk-hout)"/><path d="M0 ${H * .3} C${W * .3} ${H * .26} ${W * .6} ${H * .34} ${W} ${H * .29} M0 ${H * .72} C${W * .35} ${H * .68} ${W * .7} ${H * .76} ${W} ${H * .7}" stroke="#B9824E" stroke-width="1.2" fill="none" opacity=".35"/><rect width="${W}" height="${H}" rx="14" fill="none" stroke="#B9824E" stroke-width="2" opacity=".5"/><ellipse cx="${W * .3}" cy="${H * .2}" rx="${W * .35}" ry="${H * .14}" fill="#fff" opacity=".12"/></g>`;
     const segs = [];
     /* draden */
     B.draden.forEach((d, i) => {
       const A = B.pos(d.a), Bp = B.pos(d.b), pad = route(A, Bp, d);
       if (d.kapot && opts.toonKapot) {
         s += `<path d="${pad}" stroke="${schema ? '#2B1726' : (d.kleur || KAB[i % KAB.length])}" stroke-width="${schema ? 2.2 : 5}" fill="none" stroke-dasharray="10 6" opacity=".6"/>`;
-      } else if (schema) s += `<path d="${pad}" stroke="#2B1726" stroke-width="2.2" fill="none" stroke-linejoin="round"/>`;
+      } else if (schema) s += `<path d="${pad}" stroke="#2B1726" stroke-width="3.4" fill="none" stroke-linejoin="round"/>`;
       else {
         const k = d.kleur || (d.a.endsWith('.p') || d.b.endsWith('.p') ? '#D93A3A' : d.a.endsWith('.n') || d.b.endsWith('.n') ? '#2E3440' : KAB[2 + i % 4]);
-        s += `<path d="${pad}" stroke="#000" stroke-opacity=".18" stroke-width="7" fill="none" stroke-linejoin="round" stroke-linecap="round" transform="translate(1 2)"/><path d="${pad}" stroke="${k}" stroke-width="5" fill="none" stroke-linejoin="round" stroke-linecap="round"/><path d="${pad}" stroke="#fff" stroke-opacity=".38" stroke-width="1.5" fill="none" stroke-linejoin="round" transform="translate(-.6 -1)"/>`;
+        s += `<path d="${pad}" stroke="#000" stroke-opacity=".18" stroke-width="9" fill="none" stroke-linejoin="round" stroke-linecap="round" transform="translate(1 2)"/><path d="${pad}" stroke="${k}" stroke-width="7" fill="none" stroke-linejoin="round" stroke-linecap="round"/><path d="${pad}" stroke="#fff" stroke-opacity=".38" stroke-width="2" fill="none" stroke-linejoin="round" transform="translate(-.6 -1)"/>`;
       }
-      if (opts.draadTik) s += `<path class="nk-draadtik" data-draad="${i}" d="${pad}" stroke="transparent" stroke-width="16" fill="none" stroke-linecap="round"/>`;
+      if (opts.draadTik) s += `<path class="nk-draadtik" data-draad="${i}" d="${pad}" stroke="transparent" stroke-width="30" fill="none" stroke-linecap="round"/>`;
       segs.push({ d: pad, I: d.kapot ? 0 : (opl.draad[i] || 0) });
     });
     s += '<g class="nk-dots"></g>';
@@ -316,13 +337,13 @@ const NK = (() => {
       const mx = (A[0] + Bp[0]) / 2 + nx, my = (A[1] + Bp[1]) / 2 + ny;
       c._pos = [mx, my];
       const sterk = !!c.inhoud, kl = schema ? '#2B1726' : '#D93A3A';
-      const w2 = 16, p1 = [mx - w2 * Math.cos(r), my - w2 * Math.sin(r)], p2 = [mx + w2 * Math.cos(r), my + w2 * Math.sin(r)];
+      const w2 = 16 * S, p1 = [mx - w2 * Math.cos(r), my - w2 * Math.sin(r)], p2 = [mx + w2 * Math.cos(r), my + w2 * Math.sin(r)];
       const pad1 = `M${A[0]} ${A[1]} L${A[0] + nx} ${A[1] + ny} L${p1[0]} ${p1[1]}`, pad2 = `M${Bp[0]} ${Bp[1]} L${Bp[0] + nx} ${Bp[1] + ny} L${p2[0]} ${p2[1]}`;
       s += `<path d="${pad1} ${pad2.replace('M', 'M')}" stroke="${sterk ? kl : '#EA580C'}" stroke-width="${sterk ? (schema ? 2 : 3) : 1.6}" fill="none" ${sterk ? '' : 'stroke-dasharray="4 3"'} stroke-linejoin="round"/>`;
       if (sterk) { const I = opl.I[c.id] || 0; segs.push({ d: `M${A[0] + nx} ${A[1] + ny} L${Bp[0] + nx} ${Bp[1] + ny}`, I }); }
       s += `<g transform="translate(${mx} ${my}) rotate(${o.rot || 0})" data-comp="${c.id}"${opts.plekMarkers ? ` data-plek="${c.id}"` : ''}>` +
         (sterk ? onderdeel({ ...c, soort: c.inhoud === 'V' ? 'meterV' : 'meterA', w: w2, rot: o.rot }, { ...opl, meter: { [c.id]: opl.meter[c.id] } }, schema, opts)
-          : (opts.plekMarkers ? `<g class="nk-plekteken"><circle r="10" fill="#fff" fill-opacity=".9" stroke="#EA580C" stroke-width="2" stroke-dasharray="4 3"/><path d="M-4.5 0 H4.5 M0 -4.5 V4.5" stroke="#EA580C" stroke-width="2.2" stroke-linecap="round"/></g>` : '')) + `</g>`;
+          : (opts.plekMarkers ? `<g class="nk-plekteken"><circle r="24" fill="transparent"/><circle r="15" fill="#fff" fill-opacity=".92" stroke="#EA580C" stroke-width="3" stroke-dasharray="5 4"/><path d="M-6.5 0 H6.5 M0 -6.5 V6.5" stroke="#EA580C" stroke-width="3" stroke-linecap="round"/></g>` : '')) + `</g>`;
     });
     /* onderdelen */
     def.onderdelen.filter(c => c.soort !== 'plekOver').forEach(c => {
@@ -335,70 +356,66 @@ const NK = (() => {
       }
       const klik = c.klik || (c.soort === 'schakelaar' || c.soort === 'lamp' ? c.id : null);
       s += `<g transform="translate(${c.x} ${c.y}) rotate(${c.rot || 0})" data-comp="${c.id}"${c.soort === 'plek' && opts.plekMarkers ? ` data-plek="${c.id}"` : ''}${klik ? ' class="nk-tikbaar"' : ''}>${onderdeel(c, opl, schema, opts)}` +
-        (klik && opts.tikbaar ? `<rect x="${-halve(c) + 4}" y="-26" width="${2 * halve(c) - 8}" height="40" fill="transparent"/>` : '') + `</g>`;
+        (klik && opts.tikbaar ? `<rect x="${-halve(c)}" y="${-30 * S}" width="${2 * halve(c)}" height="${46 * S}" fill="transparent"/>` : '') + `</g>`;
       if (c.label && opts.labels !== false) {
         const vert = Math.abs(((c.rot || 0) % 180)) === 90;
-        const lx = c.lx ?? (vert ? c.x + (c.lzijde === 'l' ? -24 : 24) : c.x), ly = c.ly ?? (vert ? c.y + 4 : c.y + (c.soort === 'lamp' && !schema ? 22 : 24));
-        s += tekst(lx, ly, c.label, { s: 10.5, a: c.la || (vert ? (c.lzijde === 'l' ? 'end' : 'start') : 'middle') });
+        const lx = c.lx ?? (vert ? c.x + (c.lzijde === 'l' ? -26 * S : 24 * S) : c.x), ly = c.ly ?? (vert ? c.y + 5 : c.y + (c.soort === 'lamp' && !schema ? 30 : 36));
+        s += tekst(lx, ly, c.label, { s: 13.5, a: c.la || (vert ? (c.lzijde === 'l' ? 'end' : 'start') : 'middle') });
       }
       if (c.soort === 'batterij' && opts.labels !== false && !c.label) {
         const vert = Math.abs(((c.rot || 0) % 180)) === 90;
-        s += tekst(vert ? c.x + 16 : c.x, vert ? c.y + 4 : c.y + 24, getal(spanningVan(c), 1) + ' V', { s: 10.5, a: vert ? 'start' : 'middle' });
+        s += tekst(vert ? c.x + 18 * S : c.x, vert ? c.y + 5 : c.y + 34, getal(spanningVan(c), 1) + ' V', { s: 14, a: vert ? 'start' : 'middle' });
       }
     });
     if (opts.aansluit) {
       def.onderdelen.forEach(c => aansl(c).forEach(t => {
         if (c.soort === 'plekOver') return;
         const key = c.id + '.' + t, [x, y] = B.pos(key);
-        s += `<g class="nk-aansl" data-t="${key}"><circle cx="${x}" cy="${y}" r="16" fill="transparent"/><circle class="nk-aansl-ring" cx="${x}" cy="${y}" r="6.5" fill="#fff" stroke="#EA580C" stroke-width="2.2"/><circle cx="${x}" cy="${y}" r="2.2" fill="#EA580C"/></g>`;
+        s += `<g class="nk-aansl" data-t="${key}"><circle cx="${x}" cy="${y}" r="24" fill="transparent"/><circle class="nk-aansl-ring" cx="${x}" cy="${y}" r="10" fill="#fff" stroke="#EA580C" stroke-width="3"/><circle cx="${x}" cy="${y}" r="3.4" fill="#EA580C"/></g>`;
       }));
     }
-    if (opl.kort) s += `<g><rect x="${W / 2 - 92}" y="6" width="184" height="24" rx="12" fill="#DB5A4A"/>${tekst(W / 2, 22, 'Kortsluiting! De batterij wordt heet.', { s: 11, k: '#fff', halo: false })}</g>`;
+    if (opl.kort) s += `<g><rect x="${X0 + W / 2 - 115}" y="${Y0 + 4}" width="230" height="28" rx="14" fill="#DB5A4A"/>${tekst(X0 + W / 2, Y0 + 23, 'Kortsluiting! De batterij wordt heet.', { s: 13, k: '#fff', halo: false })}</g>`;
     return { s, segs };
   }
   function kringSvg(def, opts = {}) {
     const opl = los(def), { s } = markup(def, opl, { ...opts, aansluit: false });
-    return `<svg viewBox="${def.vb || '0 0 320 200'}" class="svgvis" role="img" aria-label="${opts.alt || 'schakeling'}">${s}</svg>`;
+    return `<svg viewBox="${vakVan(def).join(' ')}" class="svgvis" role="img" aria-label="${opts.alt || 'schakeling'}">${s}</svg>`;
   }
 
   /* ---------------- kant-en-klare schakelingen ---------------- */
   /* serie: batterij onder, lampjes boven; opties: n, cellen, cel, schakelaar (dicht), plekken (meterplekken) */
-  function serieDef({ n = 1, cellen = 2, cel = 1.5, schakelaar = null, plekken = false, Rs = null, vb = '0 0 320 210', labels = true } = {}) {
-    const on = [{ id: 'B', soort: 'batterij', x: 160, y: 176, cellen, cel }], dr = [];
-    const xs = n === 1 ? [160] : n === 2 ? [118, 202] : [92, 160, 228];
-    xs.forEach((x, i) => on.push({ id: 'L' + (i + 1), soort: 'lamp', x, y: 64, R: Rs ? Rs[i] : 6, label: labels && n > 1 ? 'lampje ' + (i + 1) : (labels ? 'lampje' : null) }));
-    const wB = 8 + 12 * cellen;
-    const links = [40, 64], rechts = [280, 64];
-    if (schakelaar !== null) on.push({ id: 'S', soort: 'schakelaar', x: 40, y: 118, rot: 90, dicht: !!schakelaar, label: labels ? 'schakelaar' : null, lzijde: 'r' });
-    if (plekken) { on.push({ id: 'P1', soort: 'plek', x: 280, y: 118, rot: 90, label: null }); }
-    /* rechterkant: B.p -> rechts omhoog -> laatste lamp */
+  function serieDef({ n = 1, cellen = 2, cel = 1.5, schakelaar = null, plekken = false, Rs = null, vb = '0 0 320 230', labels = true } = {}) {
+    const yL = 84, yB = 196, xL = 28, xR = 292;
+    const on = [{ id: 'B', soort: 'batterij', x: 160, y: yB, cellen, cel }], dr = [];
+    const xs = n === 1 ? [160] : n === 2 ? [104, 216] : [70, 160, 250];
+    xs.forEach((x, i) => on.push({ id: 'L' + (i + 1), soort: 'lamp', x, y: yL, R: Rs ? Rs[i] : 6, label: labels ? (n > 1 ? 'lampje ' + (i + 1) : 'lampje') : null }));
+    if (schakelaar !== null) on.push({ id: 'S', soort: 'schakelaar', x: xL, y: 140, rot: 90, dicht: !!schakelaar, label: labels ? 'schakelaar' : null, lzijde: 'r' });
+    if (plekken) on.push({ id: 'P1', soort: 'plek', x: xR, y: 140, rot: 90 });
     const laatste = 'L' + n;
-    if (plekken) { dr.push(['B.p', 'P1.b', { via: [[280, 176]] }]); dr.push(['P1.a', laatste + '.b', { via: [[280, 64]] }]); }
-    else dr.push(['B.p', laatste + '.b', { via: [[280, 176], rechts] }]);
+    if (plekken) { dr.push(['B.p', 'P1.b', { via: [[xR, yB]] }]); dr.push(['P1.a', laatste + '.b', { via: [[xR, yL]] }]); }
+    else dr.push(['B.p', laatste + '.b', { via: [[xR, yB], [xR, yL]] }]);
     for (let i = n; i > 1; i--) dr.push(['L' + i + '.a', 'L' + (i - 1) + '.b']);
-    if (schakelaar !== null) { dr.push(['L1.a', 'S.a', { via: [links] }]); dr.push(['S.b', 'B.n', { via: [[40, 176]] }]); }
-    else dr.push(['L1.a', 'B.n', { via: [links, [40, 176]] }]);
-    void wB;
+    if (schakelaar !== null) { dr.push(['L1.a', 'S.a', { via: [[xL, yL]] }]); dr.push(['S.b', 'B.n', { via: [[xL, yB]] }]); }
+    else dr.push(['L1.a', 'B.n', { via: [[xL, yL], [xL, yB]] }]);
     return { vb, onderdelen: on, draden: dr };
   }
   /* parallel: batterij links, elke tak een rij met (optioneel) een stroommeter en een lampje */
-  function parallelDef({ Rs = [6, 6], cellen = 4, cel = 1.5, meters = true, totaal = true, mA = false, labels = true, vb = '0 0 320 210' } = {}) {
-    const n = Rs.length, ys = n === 2 ? [74, 138] : n === 3 ? [58, 110, 162] : [50, 90, 130, 170];
-    const on = [{ id: 'B', soort: 'batterij', x: 34, y: 116, rot: -90, cellen, cel, label: null }], dr = [];
-    const wB = 8 + 12 * cellen, top = 22, bodem = 196;
-    if (totaal) { on.push({ id: 'AT', soort: 'meterA', x: 74, y: top, mA, label: null }); dr.push(['B.p', 'AT.a', { via: [[34, top]] }]); }
+  function parallelDef({ Rs = [6, 6], cellen = 4, cel = 1.5, meters = true, totaal = true, mA = false, labels = true } = {}) {
+    const n = Rs.length, ys = n === 2 ? [100, 196] : n === 3 ? [92, 172, 252] : [80, 150, 220, 290];
+    const top = 32, bodem = ys[n - 1] + 46, vb = '0 0 320 ' + (bodem + 14), xJ = 106, xK = 302;
+    const on = [{ id: 'B', soort: 'batterij', x: 30, y: (top + bodem) / 2, rot: -90, cellen, cel, label: null }], dr = [];
+    if (totaal) { on.push({ id: 'AT', soort: 'meterA', x: 66, y: top, mA, label: null }); dr.push(['B.p', 'AT.a', { via: [[30, top]] }]); }
     ys.forEach((y, i) => {
       const k = i + 1;
-      on.push({ id: 'J' + k, soort: 'knoop', x: 112, y }); on.push({ id: 'K' + k, soort: 'knoop', x: 292, y });
-      if (meters) on.push({ id: 'A' + k, soort: 'meterA', x: 158, y, mA, label: null });
-      on.push({ id: 'L' + k, soort: 'lamp', x: 236, y, R: Rs[i], label: labels ? 'lampje ' + k : null, lx: 250, ly: y - 28, la: 'start' });
+      on.push({ id: 'J' + k, soort: 'knoop', x: xJ, y }); on.push({ id: 'K' + k, soort: 'knoop', x: xK, y });
+      if (meters) on.push({ id: 'A' + k, soort: 'meterA', x: 160, y, mA, label: null });
+      on.push({ id: 'L' + k, soort: 'lamp', x: 246, y, R: Rs[i], label: labels ? 'lampje ' + k : null, lx: 220, ly: y - 44, la: 'end' });
       if (meters) { dr.push(['J' + k + '.k', 'A' + k + '.a']); dr.push(['A' + k + '.b', 'L' + k + '.a']); } else dr.push(['J' + k + '.k', 'L' + k + '.a']);
       dr.push(['L' + k + '.b', 'K' + k + '.k']);
       if (k > 1) { dr.push(['J' + (k - 1) + '.k', 'J' + k + '.k']); dr.push(['K' + (k - 1) + '.k', 'K' + k + '.k']); }
     });
-    if (totaal) dr.push(['AT.b', 'J1.k', { via: [[112, top]] }]); else dr.push(['B.p', 'J1.k', { via: [[34, top], [112, top]] }]);
-    dr.push(['K' + n + '.k', 'B.n', { via: [[292, bodem], [34, bodem]] }]);
-    void wB;
+    if (totaal) dr.push(['AT.b', 'J1.k', { via: [[xJ, top]] }]); else dr.push(['B.p', 'J1.k', { via: [[30, top], [xJ, top]] }]);
+    dr.push(['K' + n + '.k', 'B.n', { via: [[xK, bodem], [30, bodem]] }]);
     return { vb, onderdelen: on, draden: dr };
   }
 
@@ -509,5 +526,5 @@ const NK = (() => {
     return `<svg viewBox="0 0 120 120" aria-hidden="true" class="nk-baas">${grad}${schaduw(60, 115, 40, 5, .16)}${achter}<g class="nk-adem">${lijf}${glans}${ogenSvg}${wenk}${mondSvg}</g>${extra}</svg>`;
   }
 
-  return { getal, kort, tekst, schaduw, oog, kring: { los, markup, verbonden, bouw, aansl, halve, spanningVan, MATERIAAL }, kringSvg, serieDef, parallelDef, obj, gids, baas };
+  return { getal, kort, tekst, schaduw, oog, kring: { los, markup, verbonden, bouw, aansl, halve, spanningVan, MATERIAAL, vak: vakVan }, kringSvg, serieDef, parallelDef, obj, gids, baas };
 })();
