@@ -743,7 +743,7 @@
       const tab = h('div', { class: 'nk-tabel' }, p.tabel.map(([n, r]) => h('span', {}, n, h('b', {}, g2(r, r < 1 || Math.round(r * 100) % 10 ? 2 : 1)))));
       const chips = h('div', { class: 'chips' }); let af = false, fout = 0;
       const juist = p.tabel.reduce((a, c) => Math.abs(c[1] - rho) < Math.abs(a[1] - rho) ? c : a);
-      shuffle(p.tabel.slice()).slice(0, 5).concat(p.tabel.slice(0, 5).includes(juist) ? [] : [juist]).filter((x, i, a) => a.indexOf(x) === i).forEach(([n, r]) => {
+      (() => { const k = shuffle(p.tabel.slice()).slice(0, 5); if (!k.includes(juist)) k[0] = juist; return shuffle(k); })().forEach(([n, r]) => {
         const b = h('button', { class: 'chip', type: 'button' }, n); b._goed = n === juist[0];
         b.addEventListener('click', () => { if (af || b.disabled) return; if (n === juist[0]) { af = true; b.classList.add('gedaan'); chips.querySelectorAll('.chip').forEach(c => c.disabled = true); api.geefXP(fout ? 2 : 6, b); zegNK(f, 'goed', `<b>${n}!</b> ${g2(rho, 2)} g/cm³ staat in de tabel bij ${n}. Zo herken je een stof aan zijn dichtheid.`); afronden(vis, p, api); } else { fout++; b.classList.add('fout'); b.disabled = true; zegNK(f, 'fout', `${n} heeft ${g2(r, r < 1 ? 2 : 1)} g/cm³. Dat past niet bij ${g2(rho, 2)}.`); } });
         chips.append(b);
