@@ -1,6 +1,6 @@
 {
- "build": "84c48d60ec",
- "appBytes": 1415058,
+ "build": "f6036bf7b6",
+ "appBytes": 1415081,
  "app": [
   "assets/font/fredoka-500.woff2",
   "assets/font/fredoka-600.woff2",
@@ -51,6 +51,11 @@
    "pad": "video/dichtheid-n3.mp4",
    "hash": "f6c5ae9dae3a",
    "bytes": 1099972
+  },
+  {
+   "pad": "video/dichtheid.mp4",
+   "hash": "4baf570bacc5",
+   "bytes": 7845533
   },
   {
    "pad": "video/drijven-n1.mp4",
@@ -129,13 +134,8 @@
   },
   {
    "pad": "video/spanning.mp4",
-   "hash": "e3a4fd3966b3",
-   "bytes": 9175088
-  },
-  {
-   "pad": "video/spanning.ruw.mp4",
-   "hash": "2752e63e946d",
-   "bytes": 36695168
+   "hash": "91fbb9ac521d",
+   "bytes": 10207381
   },
   {
    "pad": "video/stroomkring.mp4",
